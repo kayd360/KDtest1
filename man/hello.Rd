@@ -24,4 +24,131 @@ Provides an overview table for the time and scope conditions of
 \examples{
 data(toydata)
 output_table <- overview_tab(dat = toydata, id = ccode, time = year)
+ ---------------------------------------------------------
+ Libraries and Data preparation
+ ---------------------------------------------------------
+
+ --------------------------------
+ Basic Libraries
+ --------------------------------
+rm(list = ls())
+library(lattice)
+library(rgl)
+library(car)
+library(rsm)
+library(effects)
+library(splines)
+library(relaimpo)
+library(lmtest)
+
+ --------------------------------
+ Data Load
+ --------------------------------
+ loading from txt
+Sal = read.table("P130.txt", header = TRUE, sep = "\t", dec = ".", col.names = c("salary", "exper", "educ", "manag"))
+
+ loading from .RData file
+load("USTemp.RData")
+
+ is dataset complete
+all(complete.cases(USTemp))
+
+ --------------------------------
+ Factoring the Data and Revelling
+ --------------------------------
+Sal$educ = factor(Sal$educ, levels = c(1, 2, 3), labels = c("HighS", "Bachelor", "Master"))
+Sal$manag = factor(Sal$manag, levels = c(0, 1), labels = c("NonMan", "Man"))
+Sal$educ = relevel(Sal$educ, ref = "Master")
+
+
+ ---------------------------------------------------------
+ Modelling
+ ---------------------------------------------------------
+
+ --------------------------------
+ Creating Models
+ --------------------------------
+
+fit = lm(salary ~ educ + manag + exper, data = Sal)  without interaction
+fitInter = lm(salary ~ educ + manag + exper + educ:manag, data = Sal)  with interaction terms
+
+fit = lm(temp ~ poly(long, degree = 3, raw = TRUE) + poly(lat, degree = 3, raw = TRUE), data = USTemp)  polynomial model
+fitI = lm(temp ~ long + I(long^2) + I(long^3) + lat + I(lat^2) + I(lat^3), data = USTemp)  polynomial using Identitiy equation
+fitR = lm(temp ~ poly(long, degree = 3, raw = TRUE) + lat, data = USTemp)  poly longitude + linear lattitude
+
+ with knots / splines
+fit = lm(temp ~ bs(long, degree = 1, knots = c(-80, -100)) + bs(lat, degree = 1, knots = c(30, 40)), data = USTemp)
+ function bs() will calculate the B-splines
+ argument "degree" sets the degree of a polynomial function; degree = 1 for a straight line regression function
+ argument "knots" sets values of knots into particular values of the explanatory variables (long and lat)
+
+ alternative splines with df
+fit2 = lm(temp ~ bs(long, degree = 1, df = 1 + 2) + bs(lat, degree = 1, df = 1 + 2), data = USTemp)
+
+ slicing the data for splines
+new.data = expand.grid(lat = 35, long = seq(-71, -120, by = -1))
+plot(seq(-71, -120, by = -1), predict(fit, new.data), type = "l")  plotting slice data
+
+coef(fit)
+head(model.matrix(fit))
+
+ --------------------------------
+ Plotting
+ --------------------------------
+
+ basic plots
+plot(resid(fit) ~ Sal$exper)
+plot(resid(fit) ~ interaction(Sal$educ, Sal$manag))
+
+ x-y plots
+xyplot(salary ~ exper | manag, group = educ, auto.key = TRUE, data = Sal)
+scatter3d(temp ~ long + lat, data = USTemp, surface = TRUE)  scatter3d plot has Y axis
+
+ contour plots
+contour(fit, lat ~ long, image = TRUE)  contour plot has Y-axis and then X-axis
+text(USTemp$long, USTemp$lat, labels=USTemp$city, cex= 0.6)  but everywhere else it is X-axis to Y-axis
+
+ perspective or surface plots
+persp(fit, lat ~ long, col = rev(heat.colors(5)), contours = list(z = "top", col="blue"), theta = 60, phi = 45)
+
+ effect plots
+eff1 = Effect(c("lat", "long"), fit, xlevels = list(long = seq(-120, -70, by = 1), lat = seq(25, 45, by = 5)))
+plot(eff1, x.var = "long", lines = list(multiline = TRUE)) Plotting longitude holding latitude constant
+
+eff2 = Effect(c("lat", "long"), fit, xlevels = list(long = seq(-120, -70, by = 10), lat = seq(25, 45, by = 1)))
+plot(eff2, x.var = "lat", lines = list(multiline = TRUE))  Plotting lattitude holding longitude constant
+
+plot(distance/speed ~ speed, data = brake)
+points(brake$speed, fitted(fit_full), pch = 4, col = "blue")
+
+ --------------------------------
+ Tests
+ --------------------------------
+
+ get : RSS, p value, degrees of freedom,
+anova(fit, fitInter)
+
+ residual sum of squares from model
+(Qe = sum(resid(fit)^2))
+(QeR = sum(resid(fitR)^2))
+
+ value of the F test statistic
+Ftest = anova(fit, fitInter)
+Ftest$F[2]
+
+ squared value of the t test statistic
+ttest = as.data.frame(coef(summary(fitInter)))
+ttest$`t value`[8]^2
+
+
+ Assess the relative importance of the explanatory variables
+(relImp = calc.relimp(fit_CC, type = "lmg"))
+
+ Externally studentized Residuals
+plot(rstudent(fit_temp) ~ fitted(fit_temp))
+residualPlots(fit)
+
+
+ INTERPRETATION: using these charts, we may subjectivelly judge the 1st two assumptions (1: correct specification of the regression model; 2: constant variance of the error term) from the strong set of assumptions
+ the externally studentized residuals seem to be quite randomly distributed around zero in the case of plots with longitude and fitted values on the x-axis, while there may be seen slightly "quadratic" tendency in the case of the chart with latitude on the x-axis; CONCLUSION: we found no obvious support against the assumptions, but a model with latitude in the form of quadratic polynomial could be also studied
 }
