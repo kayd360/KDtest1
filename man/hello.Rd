@@ -25,6 +25,451 @@ Provides an overview table for the time and scope conditions of
 data(toydata)
 output_table <- overview_tab(dat = toydata, id = ccode, time = year)
 
+
+
+# ------------------------
+# CM CODE BLOCK
+# ------------------------
+
+#'  a6, b3, c5
+#'  
+#'  is.factor()
+#'  
+#'  sal$educ = factor(sal$educ, levels = c(1,2,3), labels = c("HighS", "Bachelor", "Master"))
+#'  
+#'  contrasts(Sal$educ)
+#'  
+#'  #the reference group is a group to which factual interpretations of the estimated partial regression parameters REFER to
+#'  # dummy variable "Bachelor" equals to 1 for an observation (for a computer professional) where the variable educ equals "Bachelor" and otherwise equals 0 (zero)
+#'  
+#'  #Additive relationship
+#'  fit = lm(salary ~ educ + manag + exper, data = Sal)
+#'  head(model.matrix(fit))
+#'  coef(fit)
+#'  
+#'  # eg. estimated regression function for non-management computer professionals with a HighS education: fitted_salary = 8035.598 + 546.184*exper
+#'  # eg. estimated regression function for management computer professionals with a Master education: fitted_salary = 8035.598 + 546.184*exper + 6883.531 + 2996.210
+#'  
+#'  # interpretation: eg estimated (partial) regression parameter of the dummy variable Master (education) equalling 2996.21 may be understood as a (typical) increase in a salary when COMPARING a computer professional with a MASTER EDUCATION with another one WITH HIGHS EDUCATION, assuming fixed exper (experience) and no-matter if the compared computer professionals were managers or not
+#'  
+#'  plot(resid(fit) ~ Sal$exper)
+#'  
+#'  #Regression model with interaction terms
+#'  fitInter = lm(salary ~ educ + manag + exper + educ:manag, data = Sal)
+#'  head(model.matrix(fitInter))
+#'  coef(fitInter)
+#'  
+#'  anova(fit, fitInter)
+#'  
+#'  #Seminar 7
+#'  #Cubic polynomial regression model
+#'  # approach 1: raw polynomials (approach using function poly())
+#'  fit = lm(temp ~ poly(long, degree = 3, raw = TRUE) + poly(lat, degree = 3, raw = TRUE), data = USTemp) 
+#'  
+#'  #Orthogonal polynomials
+#'  fitO = lm(temp ~ poly(long, degree = 3) + poly(lat, degree = 3), data = USTemp)4
+#'  
+#'  #plotting the estimated regression function
+#'  contour(fit, lat ~ long, image = TRUE)
+#'  
+#'  #is the relationship additive?
+#'  eff1 = Effect(c("lat", "long"), fit, xlevels = list(long = seq(-120, -70, by = 1), lat = seq(25, 45, by = 5))) 
+#'  #plotting holding X2 (latitude) constant 
+#'  plot(eff1, x.var = "long", lines = list(multiline = TRUE))
+#'  
+#'  #Yes, the estimated regression model (surface) assumes the relationship between the response variable and the explanatory variables is additive; this can be seen in the fact that the estimated regression function is the same for different levels of latitude (the curves depicted have the same "shape").
+#'  
+#'  #Estimating a RESTRICTED regression model (the variable "latitude" is there without its squares or cubes)
+#'  fitR = lm(temp ~ poly(long, degree = 3, raw = TRUE) + lat, data = USTemp)
+#'  anova(fitR, fit) 
+#'  
+#'  
+#'  (Qe = sum(resid(fit)^2))
+#'  (QeR = sum(resid(fitR)^2))
+#'  diffvec = fitted(fitR)-fitted(fit)
+#'  (sum(diffvec^2))
+#'  
+#'  #seminar 8
+#'  #regression splines
+#'  # fitting the regression spline model
+#'  
+#'  fit = lm(temp ~ bs(long, degree = 1, knots = c(-80, -100)) + bs(lat, degree = 1, knots = c(30, 40)), data = USTemp)
+#'  
+#'  new.data = expand.grid(lat = 35, long = seq(-71, -120, by = -1))
+#'  
+#'  plot(seq(-71, -120, by = -1), predict(fit, new.data), type = "l")
+#'  
+#'  fit2 = lm(temp ~ bs(long, degree = 1, df = 1 + 2) + bs(lat, degree = 1, df = 1 + 2), data = USTemp)
+#'  
+#'  plot(seq(-71, -120, by = -1), predict(fit2, new.data), type = "l")
+#'  
+#'  contrasts(factor(brake$speed))
+#'  
+#'  fit_full = lm(distance/speed ~ factor(speed), data = brake) 
+#'  
+#'  model.matrix(fit_full)[1:10, 1:4]
+#'  fitSL = lm(distance/speed ~ speed, data = brake)
+#'  
+#'  #Relative importance of variables
+#'  fit_CC = lm(Sales ~ Age + HS + Income + Black + Female + Price, data = CC)
+#'  coef(fit_CC)
+#'  anova(fit_CC) 
+#'  
+#'  (relImp = calc.relimp(fit_CC, type = "lmg"))
+#'  plot(relImp)
+#'  
+#'  #seminar 9
+#'  #Regression outliers and influential observations
+#'  fit_temp = lm(temp ~ poly(long, degree = 3) + lat, data = USTemp) 
+#'  contour(fit_temp, lat ~ long, image = TRUE)
+#'  #Externally studentized residuals
+#'  rstudent(fit_temp)
+#'  residualPlots(fit_temp, tests = FALSE, quadratic = FALSE, id = list(n=3), type = "rstudent")
+#'  
+#'  #internally studentized residuals
+#'  rstandard()
+#'  
+#'  # Cook's distance - Influential observations >1
+#'  head(sort(cooks.distance(fit_temp), decreasing = TRUE))
+#'  
+#'  # 1) high absolute value of an externally studentized residual: regression outliers (these are observations with y-value far from the estimated regression function, ie high difference between empirical y-values and fitted values, ie "outlierness" in the sense of the relationship captured by the estimated regression function)
+#'  # 2) high leverage (hat-value, h_ii): observation which has "atypical" values of explanatory variables (in the sense of distance from the vector of arithmetic means) (eg Portland: it is not a regression outlier but an outlier in the space of explanatory variables values)
+#'  # 3) high Cook's distance: influential observation; "without" this observation, the estimated regression function would change "a lot"
+#'  
+#'  influencePlot(fit_temp, id = list(n = 3))
+
+
+
+
+# ------------------------
+# VM CODE BLOCK
+# ------------------------
+
+#'  install.packages("car")
+#'  install.packages("carData")
+#'  install.packages("relaimpo")
+#'  install.packages("effects")
+#'  
+#'  library(car)
+#'  library(carData)
+#'  library(relaimpo)
+#'  library(effects)
+#'  
+#'  data<-Ericksen
+#'  
+#'  UN_mine=na.omit(UN)
+#'  
+#'  head(data)
+#'  head(UN_mine)
+#'  #--------------------------------------------------------------------------------------
+#'  #a.) Create the model with the given variables
+#'  #dummy variable.
+#'  # write the model & give interpretations of coeficients
+#'  
+#'  fit<-lm(lifeExpF~fertility+ppgdp+pctUrban+infantMortality+group, data = UN_mine)
+#'  fit
+#'  
+#'  fit<-lm(lifeExpF~.- region, data = UN_mine)
+#'  fit
+#'  summary(fit)
+#'  
+#'  fitted(fit)[1]
+#'  
+#'  #fittied_lifeEXP = 8.204e+01 -1.897e+00*groupother-5.977e+00*groupafrica
+#'  #                             -3.763e-01* fertility + 3.376e-05*....                        
+#'  
+#'  
+#'  #pctUrban: an increase of 1 percetange point in variable pctUrban, corresponds
+#'  #on average to an increase of 1.280e-02 in life expectancy, holding all other
+#'  #variables fixed
+#'  
+#'  
+#'  #groupafrica: estimated regresion parameter of dummy variable group (africa) is
+#'  #-5.977e+00, which can be understood, as a decrease in life expectancy when compared
+#'  #to group "others", holding other variables fixed.
+#'  #
+#'  
+#'  
+#'  #contrasts(factor(UN_mine$group))
+#'  #fit_full<- lm(lifeExpF~ fertility+ppgdp+pctUrban+infantMortality+factor(group),data = UN_mine)
+#'  #fit_full
+#'  
+#'  plot(lifeExpF~group, data = UN_mine)
+#'  
+#'  #c.) #Relative importance of variables. Which variables have the 
+#'  #highest impact & lowest
+#'  
+#'  install.packages("relaimpo")
+#'  library("relaimpo")
+#'  (relImp = calc.relimp(fit, type = "lmg"))
+#'  #highest:infantMortality 0.33912250
+#'  #lowest:  ppgdp           0.07327518
+#'  
+#'  #d.)
+#'  
+#'  #e.) #finding outliers & influential observations, & provide interpretaitons
+#'  influencePlot(fit, id = list(n=3))
+#'  
+#'  n<- dim(model.matrix(fit))[1]
+#'  p<- dim(model.matrix(fit))[2]
+#'  max(abs(rstudent(fit))) > qt(1-0.05/(2*n), n-p-1) 
+#'  #At 5% significance level, we reject null hypothesis that there are no regression
+#'  #outliers. Meaning that we found support that there are regression outliers
+#'  
+#'  #from influence plot-> Afghanistan has high StudRes, followed by Luxembourg, 
+#'  #which shows that they are regression outliers. 
+#'  #High leverages-: Luxembourg & Afghanistan, so they are also atypical.
+#'  #High Cook's distance: Nauru, & Botswana, So they are influential observations
+#'  
+#'  influencePlot(fit, id=list(n=3))
+#'  
+#'  
+#'  #f.)#heteroskedasticity
+#'  plot(resid(fit)~UN_mine$infantMortality)#no heterosced
+#'  abline(0,0)
+#'  plot(resid(fit)~UN_mine$fertility) #no heterosced.
+#'  abline(0,0)
+#'  plot(resid(fit)~fitted(fit))
+#'  
+#'  residualPlots(fit) #an easier way how to do this task
+#'  
+#'  #g.)cubic polynomial
+#'  
+#'  fit_poly<-lm(lifeExpF~poly(fertility, degree = 3)+ppgdp+pctUrban+infantMortality
+#'          +region, data = UN_mine)
+#'  fit_poly
+#'  
+#'  
+#'  #fit_spline<-lm(lifeExpF~ bs(fertility, degree = 1, df=1+2) + infantMortality, data = UN_mine)
+#'  #fit_spline
+#'  
+#'  #Sandwitch estimate:
+#'  #covMat<- hccm(fit, type = "hc0")
+#'  #coeftest(fit,vcoc.=covMat)
+#'  
+#'  #h.) - hypothesis test & #i.)#test for interaction
+#'  
+#'  fit_inter<-lm(lifeExpF~ fertility + ppgdp + pctUrban + infantMortality
+#'               +region + fertility:infantMortality, data = UN_mine)
+#'  fit_inter
+#'  anova(fit,fit_inter)
+#'  #H0: interaction terms are not important in the reg model.
+#'  #p-value= 9.15e-06. As p value is lower than the 5% significance level,
+#'  #we reject the null hypothesis, we may say that we found some support regarding the
+#'  #importance of the interaction terms.
+#'  
+#'  #j.)test for additive relationship:
+#'  
+#'  eff<- Effect(c("fertility", "infantMortality"),fit , xlevels=list(fertility= seq(0.7, by=0.1),
+#'                                      infantMortality= seq(2,120,by=30)))
+#'  
+#'  plot(eff, x.var = "infantMortality", lines = list(multiline = TRUE))
+#'  
+#'  
+#'  ####################################
+#'  
+#'  install.packages("car")
+#'  install.packages("carData")
+#'  install.packages("relaimpo")
+#'  install.packages("effects")
+#'  
+#'  library(car)
+#'  library(carData)
+#'  library(relaimpo)
+#'  library(effects)
+#'  
+#'  data <- Ericksen
+#'  
+#'  
+#'  # task a
+#'  
+#'  #fit2<-lm(crime~.-conventional - undercount, data = data)
+#'  
+#'  fit <- lm(crime ~ minority + poverty + language + highschool + housing + city, 
+#'            data=data)
+#'  summary(fit)
+#'  fit
+#'  
+#'  #model:
+#'  #fitted_crime=84.4945+0.7428*minority + 0.1380*poverty + 0.4004*language
+#'  #- 1.0941*highschool + 0.6512*housing - 15.6940*citystate
+#'  
+#'  #interpretation
+#'  #minority - 
+#'  # an increase of share of population of Black or Hispanic in the city/state 
+#'  #for 1 percentage
+#'  #would bring an increase in crime - an additional 0.7428 serious 
+#'  #crimes per 1000 population, 
+#'  #assuming fixed values 
+#'  #of other regressors. 
+#'  
+#'  #citystate - 
+#'  # estimated regression parameter of the dummy variable state ($city) equal to  -15.69 
+#'  #serious crimes per 1000 population
+#'  #may be understood as a (typical) decrease in a crime when COMPARING a city 
+#'  #level crime with 
+#'  #an aggregated state-level crime, assuming fixed OTHER VARIABLES
+#'  
+#'  plot(crime~city, data = data) # not needed!
+#'  
+#'  #task c. 
+#'  
+#'  #Relative importance of variables
+#'  #averaging the results of sequential partitioning
+#'  
+#'  install.packages("relaimpo")
+#'  library("relaimpo")
+#'  
+#'  (relImp = calc.relimp(fit, type = "lmg"))
+#'  
+#'  #the highest impact on the model: city       0.206
+#'  #the lowest impact on the model: highschool 0.0460
+#'  
+#'  #task. e
+#'  #heteroskedasticity
+#'  plot(resid(fit) ~ data$poverty) #no heterosk.
+#'  abline(0,0)
+#'  plot(resid(fit) ~ data$language) #no heterosk.
+#'  
+#'  residualPlots(fit)
+#'  
+#'  #task. g
+#'  #cubic polynomial
+#'  
+#'  fit_poly <- lm(crime ~ poly(poverty, degree = 3) + language, data=data)
+#'  
+#'  #the straight line spline 
+#'  install.packages("splines")
+#'  library(splines)
+#'  #fit_spline = lm(crime ~ bs(poverty, degree = 1, df = 1 + 2) + language, data = data)
+#'  
+#'  #cubic (curved) spline 
+#'  #fit_spline3 = lm(crime ~ bs(poverty, degree = 3, df = 3 + 2) + language, data = data)
+#'  
+#'  # Sandwich estimate
+#'  #install.packages("lmtest")
+#'  #library(lmtest)
+#'  #covMat = hccm(fit, type = "hc0")
+#'  #coeftest(fit, vcov. = covMat)
+#'  
+#'  
+#'  #task d.Reveling ????
+#'  
+#'  data$city = relevel(data$city, ref = 2)
+#'  contrasts(factor(data$city))
+#'  
+#'  #task f.
+#'  #finding outliers & influential observations
+#'  
+#'  library(car)
+#'  influencePlot(fit, id = list(n = 3))
+#'  
+#'  #Both influential (based on Cook's distance) and outliers 
+#'  #(based on studentized residuals): 
+#'  #Saint Louis, Chicago
+#'  #Chicago had high leverage but Saint Louis is typical
+#'  # Los Angeles - high  leverage: observation which has "atypical" values of 
+#'  #explanatory variables BUT NOT AN OUTLIER OR INFLUENTIAL OBSERVATION
+#'  #Influential BUT NOT OUTLIERS: Boston, Washington DC (based on Cook's distance). 
+#'  #Also, high leverage
+#'  
+#'  #wont be in the exam:
+#'  #n = dim(model.matrix(fit))[1]
+#'  #p = dim(model.matrix(fit))[2]
+#'  #max(abs(rstudent(fit))) > qt(1 - 0.05/(2 * n), n - p - 1)
+#'  
+#'  #task h. - hypothesis test
+#'  #as the p-value ("< 2.2e-16") is lower than the significance level (0.05), 
+#'  #at 5 % significance level we reject hypothesis that the interaction terms
+#'  #are not important in the regression model; in other words: using this test we found some 
+#'  #support
+#'  #for claiming that the interaction terms are important in the regression model
+#'  
+#'  #test for interaction
+#'  
+#'  fit_full <- lm(crime~ minority + poverty + language + highschool + housing + city 
+#'                 + poverty:housing, data=data)
+#'  anova(fit, fit_full)
+#'  
+#'  
+#'  #task i.
+#'  #test for additive relationship
+#'  #ONE OR ANOTHER
+#'  
+#'  install.packages("effects")
+#'  library("effects")
+#'  
+#'  
+#'  eff1 = Effect(c("minority", "housing"), fit, xlevels = list(minority = seq(0.700, 72.600, by = 1), 
+#'                                                              housing = seq(7, 52, by = 5)))
+#'  summary(data$housing)
+#'  
+#'  plot(eff1, x.var = "minority", lines = list(multiline = TRUE))
+#'  
+#'  eff1 = Effect(c("highschool", "poverty"), fit)  #interaction doesn't matter
+#'  eff2 = Effect(c("housing", "poverty"), fit) #interaction matters
+#'  plot(eff2, x.var = "poverty", lines = list(multiline = TRUE))
+#'  
+#'  
+#'  fit10 = lm(crime ~ poverty + I(poverty^2) + I(poverty^3), data = data)
+#'  leveragePlots(fit10) # same as poly function when doing the polynomial 
+#'  
+#'  
+#'  #extra:
+#'  
+#'  # install.packages("rsm")
+#'  # plotting externally studentized residuals against fitted values
+#'  plot(rstudent(fit_temp) ~ fitted(fit_temp))
+#'  
+#'  #Studentized Residuals
+#'  residualPlots(fit_temp, tests = FALSE, quadratic = FALSE, id = list(n=3), type = "rstudent")
+#'  influencePlot(fit_temp, id = list(n = 3))
+#'  ## plotting externally studentized residuals against latitude
+#'  plot(rstudent(fit_temp) ~ USTemp$lat)
+#'  
+#'  #Cook's distance
+#'  plot(fit, which = 4) 
+#'  # D > 1 is bad - or - D > 4/n is bad.
+#'  #Leverage - standardized residuals plot, with Cook's distance.
+#'  plot(fit, which = 5)
+#'  
+#'  #Studentized Residuals
+#'  #install.packages("MASS", dependencies = T)
+#'  library(MASS)
+#'  sresid <- studres(fit) 
+#'  hist(sresid, freq = FALSE, main = "Distribution of Studentized Residuals", ylim = c(0, 0.4))
+#'  
+#'  
+#'  #task h. - hypothesis test
+#'  
+#'  #test for model fit
+#'  anova(fitR, fit)
+#'  
+#'  
+#'  #task i.
+#'  #test for additive relationship
+#'  
+#'  #latitude  - parallel
+#'  eff2 = Effect(c("lat", "long"), fit, xlevels = list(long = seq(-120, -70, by = 10), lat = seq(25, 45, by = 1))) 
+#'  plot(eff2, x.var = "lat", lines = list(multiline = TRUE)) #latitude 
+#'  
+#'  #temp plot for the US
+#'  
+#'  contour(fit, lat ~ long, image = TRUE)
+#'  text(USTemp$long, USTemp$lat, labels=USTemp$city, cex= 0.6)
+#'  
+#'  
+#'  #Plot externally studentized residuals against fitted values and
+#'  #against the values of explanatory variables. Discuss the results.
+#'  plot(rstudent(fit)~fitted(fit))
+#'  abline(h=0, lty=3)
+
+
+
+
+# ------------------------
+# KD CODE BLOCK
+# ------------------------
  # ---------------------------------------------------------
  # Libraries and Data preparation
  # ---------------------------------------------------------
